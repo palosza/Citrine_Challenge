@@ -80,27 +80,27 @@ class si_converter:
                 error_str += token
                 return error_str
         
-        #Verify that adjacent tokens always make sense.
-        previous_is_parenthesis = tokenized_units[0] in ('(', ')')
-        previous_is_math_symbol = tokenized_units[0] in ('*', '/')
-        previous_is_si_name     = tokenized_units[0] in si_names
+        #Verify that adjacent tokens always make sense. The pairs in the list below
+        #must not be adjacent, and si names must not be adjacent. 
+        enemies = [ ('*', '/'),
+                    ('/', '*'),
+                    ('(', ')'),
+                    (')', '(')]
 
         for i in range(1, len(tokenized_units)):
-            current_is_parenthesis = tokenized_units[i] in ('(', ')')
-            current_is_math_symbol = tokenized_units[i] in ('*', '/')
-            current_is_si_name     = tokenized_units[i] in si_names
+            test_pass = True
+            for couple in enemies:
+                if tokenized_units[i-1] == couple[0] and tokenized_units[i] == couple[1]:
+                    test_pass = False
+                    break
+            if tokenized_units[i-1] in si_names and tokenized_units[i] in si_names:
+                test_pass = False
 
-            if ((previous_is_parenthesis and current_is_parenthesis) or
-                (previous_is_math_symbol and current_is_math_symbol) or
-                (previous_is_si_name     and current_is_si_name)):
+            if not test_pass:
                 error_str = "ERROR: The following tokens cannot be adjacent.\n"
                 error_str += tokenized_units[i-1] + '\n'
                 error_str += tokenized_units[i] + '\n'
                 return error_str
-
-            previous_is_parenthesis = current_is_parenthesis 
-            previous_is_math_symbol = current_is_math_symbol
-            previous_is_si_name     = current_is_si_name    
 
         #Now we can assemble the unit name and the multiplication factor by 
         #recreating the input string with only SI units.
@@ -121,8 +121,8 @@ class si_converter:
         #Now take the plunge and call eval on the multiplication factor string.
         #This is risky, but the input should be well sanitized at this point.
         mult_factor = eval(mult_factor_str, {}, {})
-
-        output = {'unit_name': unit_name, 'multiplication_factor': mult_factor}
+        mult_factor_prec = '{:.14f}'.format(mult_factor)
+        output = {'unit_name': unit_name, 'multiplication_factor': mult_factor_prec}
         return output
 
 if __name__ == "__main__":
